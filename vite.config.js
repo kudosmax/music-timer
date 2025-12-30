@@ -11,10 +11,15 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/token/, ''),
       },
-      '/api/spotify': {
-        target: 'https://api.spotify.com/v1',
+      // Proxy rule for local development to match Vercel serverless function path
+      '/api/search': {
+        target: 'https://api.spotify.com/v1/search',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/spotify/, ''),
+        rewrite: (path) => {
+          // we need to keep the query parameters but remove /api/search part if we target /v1/search directly
+          // However, target is /v1/search, so we just remove /api/search from path
+          return path.replace(/^\/api\/search/, '');
+        },
       },
     },
   },

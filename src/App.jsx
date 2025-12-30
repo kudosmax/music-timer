@@ -317,8 +317,9 @@ export default function App() {
 
       try {
         const limit = 20; // Increase limit for better scrolling experience
+        // UPDATED: Point to the new Vercel serverless function /api/search
         const response = await fetch(
-          `/api/spotify/search?q=${encodeURIComponent(
+          `/api/search?q=${encodeURIComponent(
             query
           )}&type=track&limit=${limit}&offset=${offset}`,
           {
