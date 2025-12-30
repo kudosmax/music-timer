@@ -15,7 +15,6 @@ import {
   WindowContent,
   Button,
   TextInput,
-  NumberInput,
   Table,
   TableHead,
   TableBody,
@@ -45,11 +44,17 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 // Icons
-import { Trash2, GripVertical, Music } from 'lucide-react';
+import {
+  Trash2,
+  GripVertical,
+  Music,
+  Minus,
+  Plus,
+} from 'lucide-react';
 
 // --- Styled Components for Layout ---
 const Wrapper = styled.div`
-  padding: 1rem 0.5rem; // Minimal padding for mobile
+  padding: 1rem 0.5rem;
   display: flex;
   justify-content: center;
   min-height: 100vh;
@@ -130,14 +135,14 @@ const NoHoverTableRow = styled(TableRow)`
   }
   && td {
     color: inherit;
-    vertical-align: middle; // Center vertically
+    vertical-align: middle;
   }
 `;
 
 const SlimHeadCell = styled(TableHeadCell)`
-  height: 35px !important; // Force thinner header
+  height: 35px !important;
   padding: 0 5px !important;
-  white-space: nowrap !important; // Prevent line break
+  white-space: nowrap !important;
   vertical-align: middle;
   line-height: 1;
 `;
@@ -146,6 +151,70 @@ const MobileTableCell = styled(TableDataCell)`
   padding: 5px !important;
   font-size: 0.9rem;
 `;
+
+// Custom Number Input Component
+const CustomInputWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 2px;
+`;
+
+const CenteredInput = styled(TextInput)`
+  input {
+    text-align: center;
+    padding: 5px !important; // Ensure text is not cut off
+  }
+`;
+
+function CustomNumberInput({
+  value,
+  onChange,
+  min = 0,
+  max = 999,
+  width = 50,
+}) {
+  const handleDecrement = () => {
+    if (value > min) onChange(value - 1);
+  };
+  const handleIncrement = () => {
+    if (value < max) onChange(value + 1);
+  };
+  const handleChange = (e) => {
+    const val = parseInt(e.target.value);
+    if (!isNaN(val) && val >= min && val <= max) {
+      onChange(val);
+    } else if (e.target.value === '') {
+      onChange(0); // Handle empty input
+    }
+  };
+
+  return (
+    <CustomInputWrapper>
+      <Button
+        onClick={handleDecrement}
+        size="sm"
+        square
+        style={{ width: 30, height: 30 }}
+      >
+        <Minus size={12} />
+      </Button>
+      <CenteredInput
+        value={value}
+        onChange={handleChange}
+        width={width}
+        type="number"
+      />
+      <Button
+        onClick={handleIncrement}
+        size="sm"
+        square
+        style={{ width: 30, height: 30 }}
+      >
+        <Plus size={12} />
+      </Button>
+    </CustomInputWrapper>
+  );
+}
 
 // Global Rest
 const GlobalStyles = createGlobalStyle`
@@ -535,18 +604,16 @@ export default function App() {
                   ⏱️ 목표 시간 설정
                 </div>
                 <ResponsiveFlex>
-                  <NumberInput
+                  <CustomNumberInput
                     value={targetMinutes}
-                    onChange={(val) => setTargetMinutes(val)}
-                    width={70}
-                    min={0}
+                    onChange={setTargetMinutes}
+                    width={60}
                   />
                   <span>분</span>
-                  <NumberInput
+                  <CustomNumberInput
                     value={targetSeconds}
-                    onChange={(val) => setTargetSeconds(val)}
-                    width={70}
-                    min={0}
+                    onChange={setTargetSeconds}
+                    width={60}
                     max={59}
                   />
                   <span>초</span>
@@ -611,7 +678,7 @@ export default function App() {
                             title: e.target.value,
                           })
                         }
-                        style={{ flex: 1, minWidth: '120px' }}
+                        style={{ flex: 1, minWidth: '100px' }}
                       />
                       <TextInput
                         placeholder="아티스트"
@@ -622,7 +689,7 @@ export default function App() {
                             artist: e.target.value,
                           })
                         }
-                        style={{ flex: 1, minWidth: '80px' }}
+                        style={{ flex: 1, minWidth: '70px' }}
                       />
 
                       <div
@@ -632,7 +699,7 @@ export default function App() {
                           gap: 5,
                         }}
                       >
-                        <NumberInput
+                        <CustomNumberInput
                           value={manualForm.minutes}
                           onChange={(v) =>
                             setManualForm({
@@ -640,11 +707,10 @@ export default function App() {
                               minutes: v,
                             })
                           }
-                          width={60}
-                          min={0}
+                          width={50}
                         />
                         <span>분</span>
-                        <NumberInput
+                        <CustomNumberInput
                           value={manualForm.seconds}
                           onChange={(v) =>
                             setManualForm({
@@ -652,8 +718,7 @@ export default function App() {
                               seconds: v,
                             })
                           }
-                          width={60}
-                          min={0}
+                          width={50}
                           max={59}
                         />
                         <span>초</span>
