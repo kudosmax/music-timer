@@ -154,15 +154,21 @@ const MobileTableCell = styled(TableDataCell)`
 
 // Custom Number Input Component
 const CustomInputWrapper = styled.div`
-  display: flex;
+  display: inline-flex; // Changed to inline-flex to prevent full width expansion
   align-items: center;
   gap: 2px;
+  flex-shrink: 0; // Prevent shrinking
 `;
 
 const CenteredInput = styled(TextInput)`
+  && {
+    width: ${(props) =>
+      props.width}px !important; // Force fixed width
+    min-width: ${(props) => props.width}px !important;
+  }
   input {
     text-align: center;
-    padding: 5px !important; // Ensure text is not cut off
+    padding: 5px !important;
   }
 `;
 
@@ -184,7 +190,7 @@ function CustomNumberInput({
     if (!isNaN(val) && val >= min && val <= max) {
       onChange(val);
     } else if (e.target.value === '') {
-      onChange(0); // Handle empty input
+      onChange(0);
     }
   };
 
@@ -194,9 +200,16 @@ function CustomNumberInput({
         onClick={handleDecrement}
         size="sm"
         square
-        style={{ width: 30, height: 30 }}
+        style={{
+          width: 32,
+          height: 32,
+          padding: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
       >
-        <Minus size={12} />
+        <Minus size={14} strokeWidth={3} />
       </Button>
       <CenteredInput
         value={value}
@@ -208,9 +221,16 @@ function CustomNumberInput({
         onClick={handleIncrement}
         size="sm"
         square
-        style={{ width: 30, height: 30 }}
+        style={{
+          width: 32,
+          height: 32,
+          padding: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
       >
-        <Plus size={12} />
+        <Plus size={14} strokeWidth={3} />
       </Button>
     </CustomInputWrapper>
   );
@@ -603,20 +623,28 @@ export default function App() {
                 >
                   ⏱️ 목표 시간 설정
                 </div>
-                <ResponsiveFlex>
+                <ResponsiveFlex
+                  style={{
+                    flexWrap: 'nowrap',
+                    overflowX: 'auto',
+                    paddingBottom: '5px',
+                  }}
+                >
+                  {' '}
+                  {/* Prevent wrapping */}
                   <CustomNumberInput
                     value={targetMinutes}
                     onChange={setTargetMinutes}
-                    width={60}
+                    width={50}
                   />
-                  <span>분</span>
+                  <span style={{ flexShrink: 0 }}>분</span>
                   <CustomNumberInput
                     value={targetSeconds}
                     onChange={setTargetSeconds}
-                    width={60}
+                    width={50}
                     max={59}
                   />
-                  <span>초</span>
+                  <span style={{ flexShrink: 0 }}>초</span>
                 </ResponsiveFlex>
               </Panel>
 
