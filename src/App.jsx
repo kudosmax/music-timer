@@ -2,7 +2,6 @@ import React, {
   useState,
   useEffect,
   useMemo,
-  useRef,
   useCallback,
 } from 'react';
 import styled, {
@@ -50,7 +49,7 @@ import { Trash2, GripVertical, Music } from 'lucide-react';
 
 // --- Styled Components for Layout ---
 const Wrapper = styled.div`
-  padding: 1.5rem 1rem;
+  padding: 1rem 0.5rem; // Minimal padding for mobile
   display: flex;
   justify-content: center;
   min-height: 100vh;
@@ -60,7 +59,7 @@ const Wrapper = styled.div`
 
 const StyledWindow = styled(Window)`
   width: 100%;
-  max-width: 800px;
+  max-width: 600px;
   min-height: 200px;
   display: flex;
   flex-direction: column;
@@ -93,13 +92,11 @@ const ResultItem = styled.div`
   &:last-child {
     border-bottom: none;
   }
-
-  // NO HOVER EFFECT AT ALL
 `;
 
 const StatusPanel = styled(Panel)`
   margin-top: auto;
-  padding: 1rem;
+  padding: 0.8rem;
   background: ${(props) =>
     props.$isOver
       ? props.$isSevere
@@ -114,6 +111,7 @@ const StatusPanel = styled(Panel)`
   gap: 0.5rem;
   justify-content: space-between;
   align-items: center;
+  font-size: 0.9rem;
 `;
 
 const ResponsiveFlex = styled.div`
@@ -121,23 +119,6 @@ const ResponsiveFlex = styled.div`
   gap: 0.5rem;
   align-items: center;
   flex-wrap: wrap;
-`;
-
-const TableContainer = styled.div`
-  overflow-x: auto;
-  margin-bottom: 1rem;
-
-  &::-webkit-scrollbar {
-    height: 12px;
-  }
-  &::-webkit-scrollbar-track {
-    background: #dfdfdf;
-  }
-  &::-webkit-scrollbar-thumb {
-    background: #c0c0c0;
-    border: 2px solid;
-    border-color: #ffffff #808080 #808080 #ffffff;
-  }
 `;
 
 // Override React95 TableRow hover styles
@@ -149,7 +130,21 @@ const NoHoverTableRow = styled(TableRow)`
   }
   && td {
     color: inherit;
+    vertical-align: middle; // Center vertically
   }
+`;
+
+const SlimHeadCell = styled(TableHeadCell)`
+  height: 35px !important; // Force thinner header
+  padding: 0 5px !important;
+  white-space: nowrap !important; // Prevent line break
+  vertical-align: middle;
+  line-height: 1;
+`;
+
+const MobileTableCell = styled(TableDataCell)`
+  padding: 5px !important;
+  font-size: 0.9rem;
 `;
 
 // Global Rest
@@ -198,26 +193,28 @@ function SortableRow({ song, onRemove, formatTime }) {
       {...attributes}
       $isDragging={isDragging}
     >
-      <TableDataCell style={{ width: '40px', padding: '0 5px' }}>
+      {/* 1. Drag Handle */}
+      <MobileTableCell style={{ width: '40px', textAlign: 'center' }}>
         <div
           {...listeners}
           style={{
             cursor: 'grab',
             display: 'flex',
             justifyContent: 'center',
-            padding: '10px',
+            padding: '5px',
           }}
         >
           <GripVertical size={16} color="#888" />
         </div>
-      </TableDataCell>
-      <TableDataCell>
+      </MobileTableCell>
+
+      {/* 2. Song Info (Title + Artist merged) */}
+      <MobileTableCell>
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            minWidth: '120px',
           }}
         >
           {song.coverUrl ? (
@@ -225,26 +222,64 @@ function SortableRow({ song, onRemove, formatTime }) {
               src={song.coverUrl}
               alt=""
               style={{
-                width: 24,
-                height: 24,
+                width: 32,
+                height: 32,
+                borderRadius: 2,
                 border: '1px solid gray',
+                flexShrink: 0,
               }}
             />
           ) : (
-            <Music size={16} />
+            <Music size={24} style={{ flexShrink: 0 }} />
           )}
-          <span style={{ fontWeight: 'bold' }}>{song.title}</span>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              overflow: 'hidden',
+              lineHeight: '1.2',
+            }}
+          >
+            <span
+              style={{
+                fontWeight: 'bold',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                maxWidth: '150px',
+                marginBottom: '2px',
+              }}
+            >
+              {song.title}
+            </span>
+            <span
+              style={{
+                fontSize: '0.75rem',
+                color: '#666',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                maxWidth: '150px',
+              }}
+            >
+              {song.artist}
+            </span>
+          </div>
         </div>
-      </TableDataCell>
-      <TableDataCell>{song.artist}</TableDataCell>
-      <TableDataCell style={{ textAlign: 'center' }}>
+      </MobileTableCell>
+
+      {/* 3. Time */}
+      <MobileTableCell style={{ textAlign: 'center', width: '50px' }}>
         {formatTime(song.durationMs)}
-      </TableDataCell>
-      <TableDataCell style={{ textAlign: 'center' }}>
+      </MobileTableCell>
+
+      {/* 4. Delete */}
+      <MobileTableCell style={{ textAlign: 'center', width: '40px' }}>
         <Button onClick={() => onRemove(song.id)} size="sm" square>
           <Trash2 size={14} />
         </Button>
-      </TableDataCell>
+      </MobileTableCell>
     </NoHoverTableRow>
   );
 }
@@ -261,8 +296,8 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [isLoadingMore, setIsLoadingMore] = useState(false); // For infinite scroll
-  const [hasMore, setHasMore] = useState(true); // Is there more data?
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [spotifyToken, setSpotifyToken] = useState(null);
 
   // Environment Variables
@@ -316,8 +351,7 @@ export default function App() {
       if (!spotifyToken || !query) return;
 
       try {
-        const limit = 20; // Increase limit for better scrolling experience
-        // UPDATED: Point to the new Vercel serverless function /api/search
+        const limit = 20;
         const response = await fetch(
           `/api/search?q=${encodeURIComponent(
             query
@@ -332,7 +366,6 @@ export default function App() {
 
         const newItems = data.tracks.items;
 
-        // Update hasMore based on whether we got a full page back
         setHasMore(newItems.length === limit);
 
         if (offset === 0) {
@@ -355,7 +388,6 @@ export default function App() {
       return;
     }
 
-    // Reset results when query changes
     setIsSearching(true);
     const timer = setTimeout(async () => {
       await fetchTracks(searchQuery, 0);
@@ -363,12 +395,11 @@ export default function App() {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [searchQuery, manualMode, fetchTracks]); // fetchTracks is stable due to useCallback (partially, depends on token)
+  }, [searchQuery, manualMode, fetchTracks]);
 
   // 4. Infinite Scroll Handler
   const handleScroll = async (e) => {
     const { scrollTop, clientHeight, scrollHeight } = e.target;
-    // Check if scrolled near bottom
     if (scrollHeight - scrollTop <= clientHeight + 50) {
       if (!isSearching && !isLoadingMore && hasMore && searchQuery) {
         setIsLoadingMore(true);
@@ -380,7 +411,6 @@ export default function App() {
 
   // 5. Actions
   const addSong = (track) => {
-    // Duplicate Check
     const isDuplicate = songs.some((s) => s.id === track.id);
     if (isDuplicate) {
       alert('이미 리스트에 존재하는 곡입니다!');
@@ -397,7 +427,6 @@ export default function App() {
     };
     setSongs((items) => [...items, newSong]);
 
-    // Clear search for better UX
     setSearchResults([]);
     setSearchQuery('');
   };
@@ -407,7 +436,6 @@ export default function App() {
     const durationMs =
       (manualForm.minutes * 60 + manualForm.seconds) * 1000;
 
-    // Create simple ID for manual song
     const manualId = `manual-${Date.now()}`;
 
     addSong({
@@ -425,7 +453,6 @@ export default function App() {
     setSongs(songs.filter((s) => s.id !== id));
   };
 
-  // DnD Handler
   const handleDragEnd = (event) => {
     const { active, over } = event;
     if (active.id !== over.id) {
@@ -487,14 +514,15 @@ export default function App() {
                 flex: 1,
                 display: 'flex',
                 flexDirection: 'column',
+                padding: '0.5rem',
               }}
             >
-              {/* Top Controls: Target Time */}
+              {/* Top Controls */}
               <Panel
                 variant="well"
                 style={{
                   padding: '0.8rem',
-                  marginBottom: '1rem',
+                  marginBottom: '0.5rem',
                   background: 'white',
                 }}
               >
@@ -510,27 +538,18 @@ export default function App() {
                   <NumberInput
                     value={targetMinutes}
                     onChange={(val) => setTargetMinutes(val)}
-                    width={80}
+                    width={70}
                     min={0}
                   />
                   <span>분</span>
                   <NumberInput
                     value={targetSeconds}
                     onChange={(val) => setTargetSeconds(val)}
-                    width={80}
+                    width={70}
                     min={0}
                     max={59}
                   />
                   <span>초</span>
-                  <span
-                    style={{
-                      color: '#888',
-                      fontSize: '0.8em',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    (최대 +30초 허용)
-                  </span>
                 </ResponsiveFlex>
               </Panel>
 
@@ -538,7 +557,7 @@ export default function App() {
               <div
                 style={{
                   position: 'relative',
-                  marginBottom: '1rem',
+                  marginBottom: '0.5rem',
                   zIndex: 100,
                 }}
               >
@@ -555,7 +574,7 @@ export default function App() {
                       style={{
                         flex: 1,
                         position: 'relative',
-                        minWidth: '200px',
+                        minWidth: '150px',
                       }}
                     >
                       <TextInput
@@ -592,7 +611,7 @@ export default function App() {
                             title: e.target.value,
                           })
                         }
-                        style={{ flex: 1, minWidth: '150px' }}
+                        style={{ flex: 1, minWidth: '120px' }}
                       />
                       <TextInput
                         placeholder="아티스트"
@@ -603,7 +622,7 @@ export default function App() {
                             artist: e.target.value,
                           })
                         }
-                        style={{ flex: 1, minWidth: '100px' }}
+                        style={{ flex: 1, minWidth: '80px' }}
                       />
 
                       <div
@@ -621,7 +640,7 @@ export default function App() {
                               minutes: v,
                             })
                           }
-                          width={70}
+                          width={60}
                           min={0}
                         />
                         <span>분</span>
@@ -633,7 +652,7 @@ export default function App() {
                               seconds: v,
                             })
                           }
-                          width={70}
+                          width={60}
                           min={0}
                           max={59}
                         />
@@ -718,29 +737,38 @@ export default function App() {
                 )}
               </div>
 
-              {/* Table Area with auto scroll */}
-              <TableContainer>
+              {/* Compact Table Area */}
+              <div
+                style={{
+                  flex: 1,
+                  overflowY: 'auto',
+                  marginBottom: '1rem',
+                  background: 'white',
+                  border: '2px inset white',
+                }}
+              >
                 <DndContext
                   sensors={sensors}
                   collisionDetection={closestCenter}
                   onDragEnd={handleDragEnd}
                 >
-                  <Table style={{ minWidth: '500px' }}>
+                  <Table style={{ width: '100%' }}>
                     <TableHead>
                       <TableRow>
-                        <TableHeadCell style={{ width: 50 }}>
+                        <SlimHeadCell style={{ width: 40 }}>
                           이동
-                        </TableHeadCell>
-                        <TableHeadCell>곡 제목</TableHeadCell>
-                        <TableHeadCell>아티스트</TableHeadCell>
-                        <TableHeadCell
-                          style={{ textAlign: 'center', width: 80 }}
+                        </SlimHeadCell>
+                        <SlimHeadCell>곡 정보</SlimHeadCell>
+                        <SlimHeadCell
+                          style={{ width: 50, textAlign: 'center' }}
                         >
                           시간
-                        </TableHeadCell>
-                        <TableHeadCell style={{ width: 60 }}>
+                        </SlimHeadCell>
+                        <SlimHeadCell
+                          style={{ width: 40, textAlign: 'center' }}
+                        >
                           삭제
-                        </TableHeadCell>
+                        </SlimHeadCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -759,7 +787,7 @@ export default function App() {
                         {songs.length === 0 && (
                           <TableRow>
                             <TableDataCell
-                              colSpan={5}
+                              colSpan={4}
                               style={{
                                 textAlign: 'center',
                                 padding: '2rem',
@@ -774,10 +802,7 @@ export default function App() {
                               >
                                 💿 리스트가 비어있습니다.
                               </p>
-                              <p>
-                                위 검색창을 통해 곡을 추가하거나 '직접
-                                입력' 메뉴를 사용하세요.
-                              </p>
+                              <p>곡을 추가해주세요.</p>
                             </TableDataCell>
                           </TableRow>
                         )}
@@ -785,7 +810,7 @@ export default function App() {
                     </TableBody>
                   </Table>
                 </DndContext>
-              </TableContainer>
+              </div>
 
               {/* Footer Status Panel */}
               <StatusPanel
@@ -794,12 +819,11 @@ export default function App() {
                 $isSevere={isSevere}
               >
                 <div style={{ fontWeight: 'bold' }}>
-                  총 시간: {formatTime(totalDurationMs)} /{' '}
-                  {targetMinutes}:
+                  총: {formatTime(totalDurationMs)} / {targetMinutes}:
                   {targetSeconds.toString().padStart(2, '0')}
                 </div>
                 <div
-                  style={{ fontWeight: 'bold', fontSize: '1.2rem' }}
+                  style={{ fontWeight: 'bold', fontSize: '1.1rem' }}
                 >
                   {isOver ? (
                     <span>
