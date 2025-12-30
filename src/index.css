@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 폰트 로드 (React95 권장) */
+@font-face {
+  font-family: 'ms_sans_serif';
+  src: url('https://cdn.jsdelivr.net/gh/react95-io/React95@master/src/assets/fonts/ms_sans_serif.woff2')
+    format('woff2');
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'ms_sans_serif';
+  src: url('https://cdn.jsdelivr.net/gh/react95-io/React95@master/src/assets/fonts/ms_sans_serif_bold.woff2')
+    format('woff2');
+  font-weight: bold;
+  font-style: normal;
+}
+
+body {
+  /* Windows 95 Default Desktop Color */
+  background-color: #008080;
+  margin: 0;
+  font-family: 'ms_sans_serif', sans-serif;
+}
