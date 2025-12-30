@@ -50,6 +50,7 @@ import {
   Music,
   Minus,
   Plus,
+  Mail,
 } from 'lucide-react';
 
 // --- Styled Components for Layout ---
@@ -244,7 +245,7 @@ const GlobalStyles = createGlobalStyle`
   }
 `;
 
-// Utility: Format Time
+// Utility: Format Time (00:00)
 const formatTime = (ms) => {
   if (!ms && ms !== 0) return '00:00';
   const totalSeconds = Math.floor(ms / 1000);
@@ -253,6 +254,19 @@ const formatTime = (ms) => {
   return `${minutes.toString().padStart(2, '0')}:${seconds
     .toString()
     .padStart(2, '0')}`;
+};
+
+// Utility: Format Time Korean (0분 00초)
+const formatTimeKorean = (ms) => {
+  const totalSeconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  let text = '';
+  if (minutes > 0) text += `${minutes}분 `;
+  if (seconds > 0 || minutes === 0) text += `${seconds}초`;
+
+  return text.trim();
 };
 
 // --- Sortable Item Component ---
@@ -569,6 +583,36 @@ export default function App() {
   const isOver = remainingMs < 0;
   const absRemains = Math.abs(remainingMs);
   const isSevere = isOver && absRemains > 30000;
+
+  // 7. Clipboard Copy
+  const copyList = () => {
+    if (songs.length === 0) {
+      alert('리스트가 비어있습니다!');
+      return;
+    }
+
+    const header = '🎵 이번 모임 주제곡 보내드립니다!\n\n';
+    const body = songs
+      .map(
+        (s, index) =>
+          `${index + 1}. ${s.artist} - ${s.title} (${formatTimeKorean(
+            s.durationMs
+          )})`
+      )
+      .join('\n');
+    const footer = `\n\n총 ${formatTimeKorean(totalDurationMs)}`;
+
+    const fullText = header + body + footer;
+
+    navigator.clipboard
+      .writeText(fullText)
+      .then(() => {
+        alert('📋 메시지 내용이 복사되었습니다!');
+      })
+      .catch((err) => {
+        console.error('Failed to copy: ', err);
+      });
+  };
 
   return (
     <>
@@ -911,22 +955,43 @@ export default function App() {
                 $isOver={isOver}
                 $isSevere={isSevere}
               >
-                <div style={{ fontWeight: 'bold' }}>
-                  총: {formatTime(totalDurationMs)} / {targetMinutes}:
-                  {targetSeconds.toString().padStart(2, '0')}
-                </div>
                 <div
-                  style={{ fontWeight: 'bold', fontSize: '1.1rem' }}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '5px',
+                    alignItems: 'flex-start',
+                  }}
                 >
-                  {isOver ? (
-                    <span>
-                      {isSevere ? '⚠️ ' : ''}
-                      {Math.floor(absRemains / 1000)}초 초과!
-                    </span>
-                  ) : (
-                    <span>남은: {formatTime(absRemains)}</span>
-                  )}
+                  <div style={{ fontWeight: 'bold' }}>
+                    총: {formatTime(totalDurationMs)} /{' '}
+                    {targetMinutes}:
+                    {targetSeconds.toString().padStart(2, '0')}
+                  </div>
+                  <div
+                    style={{ fontWeight: 'bold', fontSize: '1.1rem' }}
+                  >
+                    {isOver ? (
+                      <span>
+                        {isSevere ? '⚠️ ' : ''}
+                        {Math.floor(absRemains / 1000)}초 초과!
+                      </span>
+                    ) : (
+                      <span>남은: {formatTime(absRemains)}</span>
+                    )}
+                  </div>
                 </div>
+
+                <Button
+                  onClick={copyList}
+                  style={{
+                    display: 'flex',
+                    gap: 5,
+                    alignItems: 'center',
+                  }}
+                >
+                  <Mail size={16} /> 메시지 복사
+                </Button>
               </StatusPanel>
             </WindowContent>
           </StyledWindow>
