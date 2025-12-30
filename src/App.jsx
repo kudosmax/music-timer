@@ -977,7 +977,7 @@ export default function App() {
                         {Math.floor(absRemains / 1000)}초 초과!
                       </span>
                     ) : (
-                      <span>남은: {formatTime(absRemains)}</span>
+                      <span>남은 시간: {formatTime(absRemains)}</span>
                     )}
                   </div>
                 </div>
