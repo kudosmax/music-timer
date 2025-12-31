@@ -389,7 +389,7 @@ function SortableRow({ song, onRemove, formatTime }) {
 
 export default function App() {
   // Settings
-  const [targetMinutes, setTargetMinutes] = useState(22);
+  const [targetMinutes, setTargetMinutes] = useState(15);
   const [targetSeconds, setTargetSeconds] = useState(0);
 
   // Data
@@ -415,6 +415,10 @@ export default function App() {
     minutes: 0,
     seconds: 0,
   });
+
+  // Copy Modal State
+  const [isCopyModalOpen, setIsCopyModalOpen] = useState(false);
+  const [copyText, setCopyText] = useState('');
 
   // DnD Sensors
   const sensors = useSensors(
@@ -585,6 +589,7 @@ export default function App() {
   const isSevere = isOver && absRemains > 30000;
 
   // 7. Clipboard Copy
+  // 7. Clipboard Copy
   const copyList = () => {
     if (songs.length === 0) {
       alert('리스트가 비어있습니다!');
@@ -603,11 +608,16 @@ export default function App() {
     const footer = `\n\n총 ${formatTimeKorean(totalDurationMs)}`;
 
     const fullText = header + body + footer;
+    setCopyText(fullText);
+    setIsCopyModalOpen(true);
+  };
 
+  const handleRealCopy = () => {
     navigator.clipboard
-      .writeText(fullText)
+      .writeText(copyText)
       .then(() => {
         alert('📋 메시지 내용이 복사되었습니다!');
+        setIsCopyModalOpen(false);
       })
       .catch((err) => {
         console.error('Failed to copy: ', err);
@@ -990,11 +1000,96 @@ export default function App() {
                     alignItems: 'center',
                   }}
                 >
-                  <Mail size={16} /> 메시지 복사
+                  <Mail size={16} /> 메시지 작성
                 </Button>
               </StatusPanel>
             </WindowContent>
           </StyledWindow>
+
+          {/* Copy Modal */}
+          {isCopyModalOpen && (
+            <div
+              style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                backgroundColor: 'rgba(0,0,0,0.4)',
+                zIndex: 9999,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Window style={{ width: 350, maxWidth: '90%' }}>
+                <WindowHeader
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <span
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 5,
+                    }}
+                  >
+                    <Mail size={16} /> 메시지 편집
+                  </span>
+                  <Button
+                    onClick={() => setIsCopyModalOpen(false)}
+                    size="sm"
+                    square
+                  >
+                    <span
+                      style={{
+                        fontWeight: 'bold',
+                        transform: 'translateY(-1px)',
+                      }}
+                    >
+                      X
+                    </span>
+                  </Button>
+                </WindowHeader>
+                <WindowContent>
+                  <p style={{ marginBottom: 10 }}>
+                    복사하기 전에 내용을 수정할 수 있습니다:
+                  </p>
+                  <textarea
+                    style={{
+                      width: '100%',
+                      height: 150,
+                      marginBottom: 10,
+                      fontFamily: 'ms_sans_serif',
+                      padding: 5,
+                      border: '2px solid #888',
+                      boxSizing: 'border-box',
+                      resize: 'vertical',
+                    }}
+                    value={copyText}
+                    onChange={(e) => setCopyText(e.target.value)}
+                  />
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'flex-end',
+                      gap: 5,
+                    }}
+                  >
+                    <Button onClick={() => setIsCopyModalOpen(false)}>
+                      취소
+                    </Button>
+                    <Button onClick={handleRealCopy} primary>
+                      복사하기
+                    </Button>
+                  </div>
+                </WindowContent>
+              </Window>
+            </div>
+          )}
         </Wrapper>
       </ThemeProvider>
     </>
