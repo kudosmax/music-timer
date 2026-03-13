@@ -452,26 +452,60 @@ export default function App() {
     getToken();
   }, [CLIENT_ID, CLIENT_SECRET]);
 
-  // 2. Fetch Function (Reusable)
+  // 2. iTunes Search (primary)
+  const fetchFromItunes = async (query, offset = 0, limit = 20) => {
+    const response = await fetch(
+      `https://itunes.apple.com/search?term=${encodeURIComponent(
+        query
+      )}&media=music&limit=${limit}&offset=${offset}&country=KR`
+    );
+    if (!response.ok) throw new Error('iTunes search failed');
+    const data = await response.json();
+    return data.results.map((item) => ({
+      id: String(item.trackId),
+      name: item.trackName,
+      artists: [{ name: item.artistName }],
+      album: {
+        name: item.collectionName,
+        images: [
+          { url: item.artworkUrl100 || item.artworkUrl60 },
+          { url: item.artworkUrl60 },
+          { url: item.artworkUrl60 },
+        ],
+      },
+      duration_ms: item.trackTimeMillis,
+    }));
+  };
+
+  // 3. Spotify Search (fallback)
+  const fetchFromSpotify = async (query, offset = 0, limit = 20) => {
+    if (!spotifyToken) throw new Error('No Spotify token');
+    const response = await fetch(
+      `/api/search?q=${encodeURIComponent(
+        query
+      )}&type=track&limit=${limit}&offset=${offset}`,
+      {
+        headers: { Authorization: `Bearer ${spotifyToken}` },
+      }
+    );
+    if (!response.ok) throw new Error('Spotify search failed');
+    const data = await response.json();
+    return data.tracks.items;
+  };
+
+  // 4. Fetch Function (iTunes first, Spotify fallback)
   const fetchTracks = useCallback(
     async (query, offset = 0) => {
-      if (!spotifyToken || !query) return;
+      if (!query) return;
 
       try {
         const limit = 20;
-        const response = await fetch(
-          `/api/search?q=${encodeURIComponent(
-            query
-          )}&type=track&limit=${limit}&offset=${offset}`,
-          {
-            headers: { Authorization: `Bearer ${spotifyToken}` },
-          }
-        );
-
-        if (!response.ok) throw new Error('Search failed');
-        const data = await response.json();
-
-        const newItems = data.tracks.items;
+        let newItems;
+        try {
+          newItems = await fetchFromItunes(query, offset, limit);
+        } catch {
+          newItems = await fetchFromSpotify(query, offset, limit);
+        }
 
         setHasMore(newItems.length === limit);
 
@@ -481,7 +515,7 @@ export default function App() {
           setSearchResults((prev) => [...prev, ...newItems]);
         }
       } catch (err) {
-        console.error(err);
+        console.error('Search error:', err);
       }
     },
     [spotifyToken]
